@@ -17,16 +17,28 @@ import java.util.concurrent.TimeUnit;
 public class ExampleOrgNTPClientExecutor
 {
     private static final Logger logger = LoggerFactory.getLogger("ExampleOrgNTPClientExecutor");
+
+    private static String controllerTimezone;
+
+    public static String getControllerTimezone() {
+        return controllerTimezone;
+    }
+    public static void setControllerTimezone(String controllerTimezone) {
+        ExampleOrgNTPClientExecutor.controllerTimezone = controllerTimezone;
+    }
+
     public static void main(String[] args)
     {
         try
         {
             //old string "2024-03-19T15:01:42.531972"
 
-            args = new String[]{"2024-03-20T15:16:00","Asia/Kolkata","172.16.13.81"};
+//            args = new String[]{"2024-03-28T7:28:00","Asia/Kolkata","172.16.13.81"};
 
-            if (args!=null && args.length > 0 && args[0]!=null && args[0].length()>0)
+            if (args!=null && args.length > 0)
             {
+
+                setControllerTimezone(args[1]);
 
                 LocalDateTime controllerDateTime = LocalDateTime.parse(args[0]);
 
@@ -70,6 +82,8 @@ public class ExampleOrgNTPClientExecutor
                 logger.info("after the run statement");
 
                 countDownLatch.await();
+
+                ExampleOrgSocketClient.execute(outputs);
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 String json = objectMapper.writeValueAsString(outputs);

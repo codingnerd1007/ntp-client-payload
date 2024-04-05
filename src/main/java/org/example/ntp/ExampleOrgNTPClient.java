@@ -8,8 +8,13 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.text.NumberFormat;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 
@@ -126,29 +131,30 @@ public class ExampleOrgNTPClient extends TimerTask {
         output.put("referenceIdentifier", refAddr);
 
         final TimeStamp refNtpTime = message.getReferenceTimeStamp();
-        sb.append(" Reference Timestamp:\t" + refNtpTime + "  " + refNtpTime.toDateString()).append("\n");
-        output.put("referenceTimestamp", refNtpTime + "  " + refNtpTime.toDateString());
+
+        sb.append(" Reference Timestamp:\t" /*+ refNtpTime + "  "*/ + convertToControllerTime(refNtpTime.toDateString())).append("\n");
+        output.put("referenceTimestamp", convertToControllerTime(refNtpTime.toDateString()));
 
         // Originate Time is time request sent by client (t1)
         final TimeStamp origNtpTime = message.getOriginateTimeStamp();
-        sb.append(" Originate Timestamp:\t" + origNtpTime + "  " + origNtpTime.toDateString()).append("\n");
-        output.put("originateTimestamp", origNtpTime + "  " + origNtpTime.toDateString());
+        sb.append(" Originate Timestamp:\t" /*+ origNtpTime + "  "*/ + convertToControllerTime(origNtpTime.toDateString())).append("\n");
+        output.put("originateTimestamp", convertToControllerTime(origNtpTime.toDateString()));
 
         final long destTimeMillis = info.getReturnTime();
         // Receive Time is time request received by server (t2)
         final TimeStamp rcvNtpTime = message.getReceiveTimeStamp();
-        sb.append(" Receive Timestamp:\t\t" + rcvNtpTime + "  " + rcvNtpTime.toDateString()).append("\n");
-        output.put("receiveTimestamp", rcvNtpTime + "  " + rcvNtpTime.toDateString());
+        sb.append(" Receive Timestamp:\t" /*+ rcvNtpTime + "  "*/ + convertToControllerTime(rcvNtpTime.toDateString())).append("\n");
+        output.put("receiveTimestamp", convertToControllerTime(rcvNtpTime.toDateString()));
 
         // Transmit time is time reply sent by server (t3)
         final TimeStamp xmitNtpTime = message.getTransmitTimeStamp();
-        sb.append(" Transmit Timestamp:\t" + xmitNtpTime + "  " + xmitNtpTime.toDateString()).append("\n");
-        output.put("transmitTimestamp", xmitNtpTime + "  " + xmitNtpTime.toDateString());
+        sb.append(" Transmit Timestamp:\t" /*+ xmitNtpTime + "  "*/ + convertToControllerTime(xmitNtpTime.toDateString())).append("\n");
+        output.put("transmitTimestamp", convertToControllerTime(xmitNtpTime.toDateString()));
 
         // Destination time is time reply received by client (t4)
         final TimeStamp destNtpTime = TimeStamp.getNtpTime(destTimeMillis);
-        sb.append(" Destination Timestamp:\t" + destNtpTime + "  " + destNtpTime.toDateString()).append("\n");
-        output.put("destinationTimestamp", destNtpTime + "  " + destNtpTime.toDateString());
+        sb.append(" Destination Timestamp:\t" /*+ destNtpTime + "  "*/ + convertToControllerTime(destNtpTime.toDateString())).append("\n");
+        output.put("destinationTimestamp", convertToControllerTime(destNtpTime.toDateString()));
 
         info.computeDetails(); // compute offset/delay if not already done
         final Long offsetMillis = info.getOffset();
@@ -159,8 +165,45 @@ public class ExampleOrgNTPClient extends TimerTask {
         sb.append(" Roundtrip delay(ms)=" + delay + ", clock offset(ms)=" + offset).append("\n"); // offset in ms
         output.put("computedDetails", " Roundtrip delay(ms)=" + delay + ", clock offset(ms)=" + offset);
 
-        sb.append("---------------------------------------------------------------------------------------------");
-
         System.out.println(sb.toString());
     }
+
+    private String convertToControllerTime(String clientTime)
+    {
+        LocalDateTime clientDateTime = LocalDateTime.parse(clientTime,DateTimeFormatter.ofPattern("EEE, MMM dd yyyy HH:mm:ss.SSS", Locale.US));
+
+        LocalDateTime formattedClientDateTime = LocalDateTime.parse(clientDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS")));
+
+        ZoneId clientZoneId = ZoneId.systemDefault();
+
+        ZonedDateTime clientZonedDateTime = formattedClientDateTime.atZone(clientZoneId);
+
+        ZoneId controllerZoneId = ZoneId.of(ExampleOrgNTPClientExecutor.getControllerTimezone());
+
+        ZonedDateTime controllerDateTime = clientZonedDateTime.withZoneSameInstant(controllerZoneId);
+
+        return controllerDateTime.toLocalDateTime().toString();
+
+    }
+
+//    public static void main(String[] args) {
+//
+//                String clientTime = "Wed, Mar 27 2024 21:55:29.231";
+//
+//        LocalDateTime clientDateTime = LocalDateTime.parse(clientTime,DateTimeFormatter.ofPattern("EEE, MMM dd yyyy HH:mm:ss.SSS", Locale.US));
+//
+//        LocalDateTime formattedCLientDateTime = LocalDateTime.parse(clientDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS")));
+//
+//        ZoneId clientZoneId = ZoneId.systemDefault();
+//
+//        ZonedDateTime clientZonedDateTime = formattedCLientDateTime.atZone(clientZoneId);
+//
+//        ZoneId controllerZoneId = ZoneId.of("Asia/Kolkata");
+//
+//        ZonedDateTime controllerDateTime = clientZonedDateTime.withZoneSameInstant(controllerZoneId);
+//
+//        System.out.println(controllerDateTime.toLocalDateTime());
+//
+//            }
+
 }
